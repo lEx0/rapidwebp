@@ -2,21 +2,35 @@
 
 VERSION=$1
 
-if [ "$VERSION" == "" ]; then
-    echo "usage: ./fetch-libwebp.sh v1.2.0"
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+
+if [ "$VERSION" == "" ]
+then
+    echo -e "${RED}usage: ./fetch-libwebp.sh v1.2.0${NC}"
+    exit 1
+fi
+
+if [[ -n `git status --porcelain` ]]
+then
+    echo -e "${RED}git status - is not clean:${NC}\n"
+    git status --long
     exit 1
 fi
 
 if [ -d "internal/source" ]
 then
-  echo "Update libwebp sources to $VERSION..."
+  echo -e "${BLUE}Update libwebp sources to {$VERSION}...${NC}"
   git subtree pull \
     --prefix internal/source \
     --squash \
     --message "update libwebp source to $VERSION" \
     https://chromium.googlesource.com/webm/libwebp $VERSION
 else
-  echo "Add libwebp $VERSION..."
+  echo -e "${BLUE}Add libwebp ${VERSION}...${NC}"
   git subtree add \
     --prefix internal/source \
     --squash \
@@ -24,16 +38,16 @@ else
     https://chromium.googlesource.com/webm/libwebp $VERSION
 fi
 
-echo "Cleaning old links..."
+echo -e "${BLUE}Cleaning old links...${NC}"
 mkdir -p internal/libwebp
 rm -f internal/libwebp/*.{c,h}
 
-echo "Create new links..."
+echo -e "${BLUE}Create new links...${NC}"
 for i in $(find internal/source/src -type f \( -iname \*.h -o -iname \*.c \)); do
   echo "#include \"../${i#internal/}\"" > "internal/libwebp/$(basename -- $i)"
 done
 
-echo "Add link files to git"
+echo -e "${BLUE}Add link files to git${NC}"
 git add internal/libwebp/*
 
-echo "libwebp updated to $VERSION"
+echo -e "${GREEN}libwebp updated to $VERSION${NC}"
