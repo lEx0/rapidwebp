@@ -1,7 +1,7 @@
 package decoder
 
 import (
-	"github.com/lEx0/fastwebp/internal/libwebp"
+	"github.com/lEx0/rapidwebp/internal/libwebp"
 	"image"
 	"io"
 	"io/ioutil"

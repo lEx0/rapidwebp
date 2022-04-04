@@ -1,7 +1,7 @@
 package webp
 
 import (
-	"github.com/lEx0/fastwebp/webp/decoder"
+	"github.com/lEx0/rapidwebp/webp/decoder"
 	"image"
 	"image/color"
 	"io"
