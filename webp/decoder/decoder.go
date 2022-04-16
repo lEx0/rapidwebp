@@ -59,8 +59,20 @@ func NewDecoder(options Options) (d *Decoder, err error) {
 	return
 }
 
-func (d *Decoder) GetFeatures(r io.Reader) (f *Features, err error) {
+func (d *Decoder) GetFeatures(r io.Reader) (*Features, error) {
 	if data, err := ioutil.ReadAll(r); err != nil {
+		return nil, err
+	} else if features, err := libwebp.WebPGetFeatures(data); err != nil {
+		return nil, err
+	} else if !features.HasAnimation {
+		return &Features{
+			Width:  features.Width,
+			Height: features.Height,
+
+			HasAlpha:     features.HasAlpha,
+			HasAnimation: features.HasAnimation,
+		}, nil
+	} else if data, err = libwebp.WebPDemuxerFirstFrameBytes(data); err != nil {
 		return nil, err
 	} else if features, err := libwebp.WebPGetFeatures(data); err != nil {
 		return nil, err
@@ -76,11 +88,24 @@ func (d *Decoder) GetFeatures(r io.Reader) (f *Features, err error) {
 }
 
 func (d *Decoder) Decode(r io.Reader) (image.Image, error) {
-	if data, err := ioutil.ReadAll(r); err != nil {
+	var (
+		data     []byte
+		err      error
+		features *libwebp.WebPBitstreamFeatures
+	)
+	if data, err = ioutil.ReadAll(r); err != nil {
 		return nil, err
-	} else if features, err := libwebp.WebPGetFeatures(data); err != nil {
+	} else if features, err = libwebp.WebPGetFeatures(data); err != nil {
 		return nil, err
-	} else {
-		return libwebp.WebPDecode(data, d.config, features)
 	}
+
+	if features.HasAnimation {
+		if data, err = libwebp.WebPDemuxerFirstFrameBytes(data); err != nil {
+			return nil, err
+		} else if features, err = libwebp.WebPGetFeatures(data); err != nil {
+			return nil, err
+		}
+	}
+
+	return libwebp.WebPDecode(data, d.config, features)
 }
