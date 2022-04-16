@@ -1,8 +1,6 @@
 package webp
 
 import (
-	"github.com/stretchr/testify/assert"
-	"image"
 	"image/color"
 	"os"
 	"testing"
@@ -33,13 +31,15 @@ func TestDecodeConfig(t *testing.T) {
 			//goland:noinspection GoUnhandledErrorResult
 			defer f.Close()
 
-			if config, err := DecodeConfig(f); test.failed {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-				assert.Equal(t, test.width, config.Width)
-				assert.Equal(t, test.height, config.Height)
-				assert.Equal(t, test.model, config.ColorModel)
+			if config, err := DecodeConfig(f); test.failed && err == nil {
+				t.Error(err)
+			} else if !test.failed && err != nil {
+				t.Error(err)
+			} else if err != nil {
+			} else if test.width != config.Width || test.height != config.Height {
+				t.Errorf("expected width: %d, height: %d, got width: %d, height: %d", test.width, test.height, config.Width, config.Height)
+			} else if test.model != config.ColorModel {
+				t.Errorf("expected model: %v, got model: %v", test.model, config.ColorModel)
 			}
 		})
 	}
@@ -70,15 +70,13 @@ func TestDecode(t *testing.T) {
 			defer f.Close()
 
 			img, err := Decode(f)
-			if test.failed && err != nil {
-				assert.Error(t, err)
+			if test.failed && err == nil {
+				t.Error(err)
+			} else if !test.failed && err != nil {
+				t.Error(err)
 			} else if err != nil {
-				t.Fatalf("expected error, but got %v", err)
-			} else {
-				assert.NoError(t, err)
-				assert.IsType(t, &image.NRGBA{}, img)
-				assert.Equal(t, test.width, img.Bounds().Dx())
-				assert.Equal(t, test.height, img.Bounds().Dy())
+			} else if test.width != img.Bounds().Dx() || test.height != img.Bounds().Dy() {
+				t.Errorf("expected width: %d, height: %d, got width: %d, height: %d", test.width, test.height, img.Bounds().Dx(), img.Bounds().Dy())
 			}
 		})
 	}
